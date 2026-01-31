@@ -1,4 +1,4 @@
-# Distributed Systems Lab — Java (Simple)
+# Distributed Systems Lab — Java 
 
 ## Objective
 Demonstrate core distributed systems concepts by building two independent services that run as separate processes, communicate over the network using HTTP, and handle failures across service boundaries gracefully.
