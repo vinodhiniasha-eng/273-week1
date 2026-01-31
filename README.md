@@ -1,65 +1,92 @@
-# Distributed Systems Lab — Java (simple)
+# Distributed Systems Lab — Java (Simple)
 
-Overview
-- Two independent Java services run as separate processes and communicate over HTTP on the same machine.
+## Objective
+Demonstrate core distributed systems concepts by building two independent services that run as separate processes, communicate over the network using HTTP, and handle failures across service boundaries gracefully.
 
-Files
-- ServiceA.java — Provider (port 8000). Endpoints: `/status`, `/data`, `/shutdown`. Logs to `serviceA.log`.
-- ServiceB.java — Consumer (port 9000). Endpoints: `/status`, `/fetch`. Calls Service A and falls back when A is unavailable. Logs to `serviceB.log`.
-- `build.sh` — compile to `bin/`
-- `runA.sh`, `runB.sh` — run each service (foreground).
+## Overview
+This project consists of two independent Java services running locally as separate OS processes. The services communicate via HTTP network calls over localhost and fail independently.
 
-Build
-Run from the `distributed-java` directory:
+- Service A (Provider) exposes data over an HTTP API.
+- Service B (Consumer) exposes its own API and calls Service A over the network.
+- When Service A fails or becomes unavailable, Service B continues running and returns a fallback response instead of crashing.
 
-```bash
+## Services
+
+### Service A — Provider
+- Port: 8000
+- Endpoints:
+  - GET /status — health check
+  - GET /data — returns JSON data
+  - GET /data?fail=true — simulates a server error (HTTP 500)
+  - GET /shutdown — gracefully shuts down Service A (simulates outage)
+- Logging: serviceA.log
+
+### Service B — Consumer
+- Port: 9000
+- Endpoints:
+  - GET /status — health check
+  - GET /fetch — calls Service A over HTTP and returns:
+    - Service A’s data on success
+    - a fallback JSON response when Service A fails or is unavailable
+- Logging: serviceB.log
+
+## Files
+- ServiceA.java — Provider service
+- ServiceB.java — Consumer service
+- build.sh — compiles both services to bin/
+- runA.sh — runs Service A
+- runB.sh — runs Service B
+
+## Build
+Run from the project root directory:
+
 ./build.sh
-```
 
-Run
-Open two terminals. In terminal A:
+## Run (Separate Processes)
+Open two terminals.
 
-```bash
+Terminal 1 — Service A:
 ./runA.sh
-```
 
-In terminal B:
-
-```bash
+Terminal 2 — Service B:
 ./runB.sh
-```
 
-Try it
-- Fetch via Service B (which will call A):
+Each service runs independently on its own port as a separate process.
 
-```bash
+## Verify Normal Operation
+Call Service B (which makes a network call to Service A):
+
 curl http://localhost:9000/fetch
-```
 
-- Confirm Service A is reachable directly:
+Call Service A directly:
 
-```bash
 curl http://localhost:8000/data
-```
 
-Simulate failure and propagation
-- Make Service A return a 500 (simulated):
+## Failure Propagation Demonstration
 
-```bash
-curl "http://localhost:8000/data?fail=true"
-curl http://localhost:9000/fetch   # B will see the failure and return a fallback
-```
+### 1. Simulated Failure (HTTP 500 from Service A)
+curl 'http://localhost:8000/data?fail=true'
+curl http://localhost:9000/fetch
 
-- Or stop Service A to simulate an outage:
+Expected behavior:
+- Service B detects Service A’s failure
+- Service B returns a fallback JSON response
+- Service B remains running and responsive
 
-```bash
+### 2. Service Outage (Service A Unavailable)
 curl http://localhost:8000/shutdown
-curl http://localhost:9000/fetch   # B will timeout/catch exception and return fallback
-```
+curl http://localhost:9000/fetch
 
-Logs
-- `serviceA.log` and `serviceB.log` will contain simple event traces and errors.
+Expected behavior:
+- Service A stops running
+- Service B catches the connection failure or timeout
+- Service B returns a fallback JSON response instead of crashing
 
-Notes
-- Services run as separate processes and communicate via network calls (HTTP).
-- Service B handles failures gracefully by returning a fallback JSON when Service A is unavailable.
+## Logs
+- serviceA.log records incoming requests and shutdown events
+- serviceB.log records outbound calls to Service A and failure handling behavior
+
+## Notes
+- Services run as independent processes and communicate exclusively via HTTP network calls.
+- Service A and Service B fail independently.
+- Service B handles Service A failures gracefully by returning a fallback response and continuing operation.
