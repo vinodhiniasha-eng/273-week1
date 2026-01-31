@@ -13,11 +13,30 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+/**
+ * ServiceA - a lightweight HTTP server used for lab1 exercises.
+ *
+ * Endpoints:
+ * - /status: simple health-check returning plain text that the service is up.
+ * - /data: returns a small JSON payload with a message and timestamp. Accepts
+ *   query parameter `fail=true` to simulate a 500 error for testing.
+ * - /shutdown: responds then stops the server shortly after (graceful stop).
+ *
+ * The class also configures logging to `serviceA.log` and logs requests and
+ * notable events for observability during tests and demonstrations.
+ */
 public class ServiceA {
     private static final int PORT = 8000;
     private static HttpServer server;
     private static final Logger logger = Logger.getLogger("ServiceA");
 
+    /**
+     * Main entry point.
+     * - Configures logging.
+     * - Creates an HTTP server bound to `PORT`.
+     * - Registers handlers for `/status`, `/data`, and `/shutdown`.
+     * - Starts the server using a cached thread pool for request handling.
+     */
     public static void main(String[] args) throws Exception {
         setupLogging();
 
@@ -31,6 +50,11 @@ public class ServiceA {
         server.start();
     }
 
+    /**
+     * setupLogging: Attach a `FileHandler` to the class logger so messages are
+     * written to `serviceA.log`. Sets a `SimpleFormatter` and `Level.INFO` so
+     * informational messages and warnings are persisted to disk for later review.
+     */
     private static void setupLogging() throws IOException {
         FileHandler fh = new FileHandler("serviceA.log", true);
         fh.setFormatter(new SimpleFormatter());
@@ -38,6 +62,10 @@ public class ServiceA {
         logger.setLevel(Level.INFO);
     }
 
+    /**
+     * StatusHandler: responds to GET /status with a simple 200 text response.
+     * Useful as a health-check endpoint for load balancers or tests.
+     */
     static class StatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -50,6 +78,12 @@ public class ServiceA {
         }
     }
 
+    /**
+     * DataHandler: handles GET /data.
+     * - By default returns a JSON object with a `message` and `timestamp`.
+     * - If the query parameter `fail=true` is present the handler simulates
+     *   a server error and responds with HTTP 500 and a JSON error message.
+     */
     static class DataHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -80,6 +114,10 @@ public class ServiceA {
         }
     }
 
+    /**
+     * ShutdownHandler: responds to /shutdown and then stops the server shortly
+     * after responding. Useful for automated cleanup during tests or demos.
+     */
     static class ShutdownHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -89,13 +127,11 @@ public class ServiceA {
                 os.write(resp.getBytes());
             }
             logger.warning("Received shutdown request; stopping server");
-            // Stop the server shortly after responding
+            // Stop the server in a separate thread but allow a short grace
+            // period for in-flight responses to be sent. `stop(1)` waits up to
+            // 1 second for exchanges to finish before forcibly closing.
             new Thread(() -> {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) {
-                }
-                server.stop(0);
+                server.stop(1);
                 logger.warning("Service A stopped");
             }).start();
         }

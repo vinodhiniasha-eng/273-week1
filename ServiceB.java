@@ -25,6 +25,11 @@ public class ServiceB {
             .connectTimeout(Duration.ofSeconds(2))
             .build();
 
+    /**
+     * Main entry point for ServiceB.
+     * - Configures logging to `serviceB.log`.
+     * - Starts an HTTP server on `PORT` and registers `/status` and `/fetch`.
+     */
     public static void main(String[] args) throws Exception {
         setupLogging();
 
@@ -37,6 +42,9 @@ public class ServiceB {
         server.start();
     }
 
+    /**
+     * setupLogging: attach a file handler so logs are written to `serviceB.log`.
+     */
     private static void setupLogging() throws IOException {
         FileHandler fh = new FileHandler("serviceB.log", true);
         fh.setFormatter(new SimpleFormatter());
@@ -94,15 +102,33 @@ public class ServiceB {
             }
         }
 
-        private void sendFallback(HttpExchange exchange, String reason) throws IOException {
-            String body = String.format("{\"message\":\"Service A unavailable\",\"reason\":\"%s\"}", reason.replaceAll("\"", "'"));
+        /**
+         * sendFallback: when Service A can't be reached or returns an error,
+         * respond with a stable JSON payload indicating A is unavailable.
+         * This method handles IOExceptions internally to avoid leaving the
+         * connection without a response (which causes "Empty reply from server").
+         */
+        private void sendFallback(HttpExchange exchange, String reason) {
+            String body = String.format("{\"message\":\"Service A unavailable\",\"reason\":\"%s\"}",
+                    reason == null ? "" : reason.replaceAll("\"", "'"));
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
-            exchange.sendResponseHeaders(200, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
+            try {
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+                logger.info("/fetch -> 200 (fallback)");
+            } catch (IOException ioe) {
+                logger.warning("Failed to send fallback response: " + ioe.getMessage());
+                try {
+                    exchange.sendResponseHeaders(500, -1);
+                } catch (IOException ignored) {
+                    // nothing we can do; connection will be closed
+                }
             }
-            logger.info("/fetch -> 200 (fallback)");
         }
     }
+
 }
+

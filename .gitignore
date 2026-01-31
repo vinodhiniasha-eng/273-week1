@@ -1,0 +1,10 @@
+*.class
+*.log
+*.log.lck
+# IDE / editor
+.vscode/
+.idea/
+target/
+out/
+# macOS
+.DS_Store
