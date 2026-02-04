@@ -106,8 +106,11 @@ Expected behavior:
   
 <img width="537" height="504" alt="image" src="https://github.com/user-attachments/assets/30a99d76-18a2-46dc-81c4-0cb0d6502d87" />
 
-
 ## Notes
 - Services run as independent processes and communicate exclusively via HTTP network calls.
 - Service A and Service B fail independently.
 - Service B handles Service A failures gracefully by returning a fallback response and continuing operation.
+
+### What makes this project distributed
+
+This project is distributed because it deliberately splits functionality across two independent services—Service A (data provider) and Service B (consumer/gateway)—that communicate over HTTP. That separation models real-world microservice patterns: each service can be developed, deployed, scaled, and restarted independently, improving fault isolation, testability (Service B implements a fallback when A fails), and realistic networking behavior for labs on resilience, instrumentation, and inter-service communication.
