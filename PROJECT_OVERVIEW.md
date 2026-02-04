@@ -11,21 +11,20 @@ This small project demonstrates two simple Java HTTP services (Service A and Ser
 - Service B (`ServiceB.java`) — an HTTP server that exposes `/status` and `/fetch`. `/fetch` calls Service A's `/data` and forwards the JSON response or returns a fallback JSON when A is unreachable or returns an error.
 
 Ports
-- Service A: 8000
-- Service B: 9000
+- Service A: 8080
+- Service B: 8081
 
 Endpoints (summary)
 - Service A
-  - `GET /status` — returns plain text "Service A is up" (200).
-  - `GET /data` — returns JSON: `{"message":"Hello from Service A","timestamp":"..."}` (200).
-    - Add `?fail=true` to simulate a 500 error: `GET /data?fail=true` returns `{"error":"simulated failure"}` (500).
+  - `GET /health` — returns plain text "Service A healthy" (200).
+  - `GET /echo?msg=...` — returns JSON echoing the `msg` parameter and a timestamp (200).
   - `GET /shutdown` — responds then stops the server shortly after (useful for automated tests).
 
 - Service B
-  - `GET /status` — returns plain text "Service B is up" (200).
-  - `GET /fetch` — performs an HTTP GET to `http://localhost:8000/data`:
+  - `GET /health` — returns plain text "Service B healthy" (200).
+  - `GET /call-echo?msg=...` — performs an HTTP GET to `http://localhost:8080/echo?msg=...`:
     - If A responds 200, B forwards A's JSON payload to the caller (200).
-    - If A returns non-200 or cannot be reached, B returns a fallback JSON: `{"message":"Service A unavailable","reason":"..."}` (200).
+    - If A returns non-200 or cannot be reached, B returns HTTP 503 with a JSON error and logs the error.
 
 Logging
 - Service A writes logs to `serviceA.log` in the working directory.
@@ -44,7 +43,7 @@ cd "distributed-java"
 2. Compile the services:
 
 ```bash
-javac ServiceA.java ServiceB.java
+./build.sh
 ```
 
 3. Start Service A (in one terminal):
@@ -75,13 +74,33 @@ curl -i http://localhost:8000/data
 - Simulate A failure:
 
 ```bash
-curl -i 'http://localhost:8000/data?fail=true'
+curl -i 'http://localhost:8080/echo?msg=hello'
 ```
 
 - Ask B to fetch from A (B forwards A's JSON or returns fallback):
 
 ```bash
-curl -i http://localhost:9000/fetch
+curl -i http://localhost:8081/call-echo?msg=hello
+```
+
+Success example (when both services running):
+
+```bash
+$ curl -i http://localhost:8081/call-echo?msg=hi
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"echo":"hi","timestamp":"2026-02-04T...Z"}
+```
+
+Failure example (Service A stopped):
+
+```bash
+$ curl -i http://localhost:8081/call-echo?msg=hi
+HTTP/1.1 503 Service Unavailable
+Content-Type: application/json; charset=utf-8
+
+{"message":"Service A unavailable","reason":"connect timed out"}
 ```
 
 - Shutdown A remotely (useful in tests):

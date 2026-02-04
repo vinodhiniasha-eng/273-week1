@@ -26,7 +26,7 @@ import java.util.logging.SimpleFormatter;
  * notable events for observability during tests and demonstrations.
  */
 public class ServiceA {
-    private static final int PORT = 8000;
+    private static final int PORT = 8080;
     private static HttpServer server;
     private static final Logger logger = Logger.getLogger("ServiceA");
 
@@ -41,8 +41,8 @@ public class ServiceA {
         setupLogging();
 
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
-        server.createContext("/status", new StatusHandler());
-        server.createContext("/data", new DataHandler());
+        server.createContext("/health", new StatusHandler());
+        server.createContext("/echo", new EchoHandler());
         server.createContext("/shutdown", new ShutdownHandler());
         server.setExecutor(Executors.newCachedThreadPool());
 
@@ -69,12 +69,40 @@ public class ServiceA {
     static class StatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            String resp = "Service A is up";
+            long start = System.nanoTime();
+            String resp = "Service A healthy";
             exchange.sendResponseHeaders(200, resp.getBytes().length);
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(resp.getBytes());
             }
-            logger.info("/status -> 200");
+            long latency = (System.nanoTime() - start) / 1_000_000;
+            logger.info(String.format("ServiceA /health %d %dms", 200, latency));
+        }
+    }
+
+    static class EchoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            long start = System.nanoTime();
+            String query = exchange.getRequestURI().getQuery();
+            String msg = "";
+            if (query != null) {
+                for (String part : query.split("&")) {
+                    if (part.startsWith("msg=")) {
+                        msg = part.substring(4);
+                    }
+                }
+            }
+
+            String body = String.format("{\"echo\":\"%s\",\"timestamp\":\"%s\"}", msg, Instant.now().toString());
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+            long latency = (System.nanoTime() - start) / 1_000_000;
+            logger.info(String.format("ServiceA /echo %d %dms", 200, latency));
         }
     }
 
@@ -127,9 +155,6 @@ public class ServiceA {
                 os.write(resp.getBytes());
             }
             logger.warning("Received shutdown request; stopping server");
-            // Stop the server in a separate thread but allow a short grace
-            // period for in-flight responses to be sent. `stop(1)` waits up to
-            // 1 second for exchanges to finish before forcibly closing.
             new Thread(() -> {
                 server.stop(1);
                 logger.warning("Service A stopped");
