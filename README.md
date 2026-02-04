@@ -47,9 +47,11 @@ Open two terminals.
 
 Terminal 1 — Service A:
 ./runA.sh
+<img width="468" height="211" alt="image" src="https://github.com/user-attachments/assets/e26a1182-6427-473c-9006-fc285076863b" />
 
 Terminal 2 — Service B:
 ./runB.sh
+<img width="473" height="186" alt="image" src="https://github.com/user-attachments/assets/4f89d42b-975c-494b-9793-cde943eca69b" />
 
 Each service runs independently on its own port as a separate process.
 
@@ -61,6 +63,8 @@ curl http://localhost:9000/fetch
 Call Service A directly:
 
 curl http://localhost:8000/data
+
+<img width="607" height="159" alt="image" src="https://github.com/user-attachments/assets/32538d47-7328-42ef-a9c4-b0d6ef3c886b" />
 
 ## Failure Propagation Demonstration
 
