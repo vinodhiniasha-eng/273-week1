@@ -73,6 +73,7 @@ Content-length: 55
 
 {"echo":"hi","timestamp":"2026-02-05T02:03:38.683933Z"}
 ```
+<img width="1368" height="394" alt="image" src="https://github.com/user-attachments/assets/621c50bf-860a-44d0-a86c-438f253d3341" />
 
 ![call-echo success](docs/screenshots/call-echo-success.svg)
 
