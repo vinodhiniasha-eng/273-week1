@@ -113,6 +113,9 @@ Content-Type: application/json; charset=utf-8
 
 {"error":"simulated failure"}
 ```
+<img width="1368" height="356" alt="image" src="https://github.com/user-attachments/assets/2e9a2e38-febf-46a2-b97d-992ad9193598" />
+
+<img width="1356" height="512" alt="image" src="https://github.com/user-attachments/assets/180e437c-e38e-4a61-997e-2cdb8f8965c9" />
 
 Expected behavior:
 - Service B detects Service A’s 500 response
