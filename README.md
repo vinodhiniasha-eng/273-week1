@@ -164,11 +164,13 @@ Expected behavior:
 ## Logs
 - serviceA.log records incoming requests and shutdown events
 
-<img width="689" height="687" alt="image" src="https://github.com/user-attachments/assets/4fb879bd-a53f-4ea5-9e31-3a9f0095e419" />
-  
+<img width="1064" height="650" alt="image" src="https://github.com/user-attachments/assets/977a7559-2fc2-4030-bec6-3ebd521ed6bc" />
+
+ 
 - serviceB.log records outbound calls to Service A and failure handling behavior
-  
-<img width="537" height="504" alt="image" src="https://github.com/user-attachments/assets/30a99d76-18a2-46dc-81c4-0cb0d6502d87" />
+
+
+  <img width="1166" height="754" alt="image" src="https://github.com/user-attachments/assets/c58cd83f-ebd6-460a-8690-34ebae029e3f" />
 
 ## Notes
 - Services run as independent processes and communicate exclusively via HTTP network calls.
