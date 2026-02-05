@@ -74,6 +74,8 @@ Content-length: 55
 {"echo":"hi","timestamp":"2026-02-05T02:03:38.683933Z"}
 ```
 
+![call-echo success](docs/screenshots/call-echo-success.svg)
+
 Call Service A directly:
 
 ```bash
@@ -131,6 +133,8 @@ Content-length: 47
 
 {"message":"Service A unavailable","reason":""}
 ```
+
+![call-echo failure](docs/screenshots/call-echo-failure.svg)
 
 Expected behavior:
 - Service A stops running
