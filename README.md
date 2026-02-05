@@ -115,14 +115,12 @@ Content-Type: application/json; charset=utf-8
 ```
 <img width="1368" height="356" alt="image" src="https://github.com/user-attachments/assets/2e9a2e38-febf-46a2-b97d-992ad9193598" />
 
-<img width="1356" height="512" alt="image" src="https://github.com/user-attachments/assets/180e437c-e38e-4a61-997e-2cdb8f8965c9" />
-
 Expected behavior:
 - Service B detects Service A’s 500 response
 - Service B returns HTTP 503 with a JSON error
 - Service B remains running and responsive
 
-<img width="466" height="402" alt="image" src="https://github.com/user-attachments/assets/e4b9ce14-041d-4c4e-801e-a02cb4976d87" />
+<img width="1194" height="676" alt="image" src="https://github.com/user-attachments/assets/b57c1b3f-b31e-4657-a147-c9121a19a8ea" />
 
 ### 2. Service Outage (Service A Unavailable)
 
@@ -131,12 +129,17 @@ Shutdown Service A:
 ```bash
 curl -i http://localhost:8080/shutdown
 ```
+<img width="1356" height="320" alt="image" src="https://github.com/user-attachments/assets/e87c4bf3-d717-4d87-b74b-e202892ffc8c" />
+
 
 Then call Service B (which calls A):
 
 ```bash
 curl -i "http://localhost:8081/call-echo?msg=after"
 ```
+
+<img width="1402" height="682" alt="image" src="https://github.com/user-attachments/assets/4261bed4-9656-44af-bc0a-42ec05bb2721" />
+
 
 Example failure response (A down; B returns 503):
 
@@ -149,12 +152,13 @@ Content-length: 47
 {"message":"Service A unavailable","reason":""}
 ```
 
-![call-echo failure](docs/screenshots/call-echo-failure.svg)
-
 Expected behavior:
 - Service A stops running
 - Service B catches the connection failure or timeout
 - Service B returns HTTP 503 with a JSON error and continues running
+
+<img width="1304" height="874" alt="image" src="https://github.com/user-attachments/assets/ac68e3fb-5f32-4686-8d1a-7d9393b72154" />
+
 
 
 ## Logs
