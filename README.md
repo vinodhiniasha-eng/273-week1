@@ -13,21 +13,20 @@ This project consists of two independent Java services running locally as separa
 ## Services
 
 ### Service A — Provider
-- Port: 8000
+- Port: 8080
 - Endpoints:
-  - GET /status — health check
-  - GET /data — returns JSON data
-  - GET /data?fail=true — simulates a server error (HTTP 500)
+  - GET /health — health check
+  - GET /echo?msg=... — returns JSON echoing `msg` and a timestamp
   - GET /shutdown — gracefully shuts down Service A (simulates outage)
 - Logging: serviceA.log
 
 ### Service B — Consumer
-- Port: 9000
+- Port: 8081
 - Endpoints:
-  - GET /status — health check
-  - GET /fetch — calls Service A over HTTP and returns:
-    - Service A’s data on success
-    - a fallback JSON response when Service A fails or is unavailable
+  - GET /health — health check
+  - GET /call-echo?msg=... — calls Service A's `/echo` and returns:
+    - Service A’s JSON payload on success (HTTP 200)
+    - HTTP 503 with a JSON error when Service A is unavailable or times out
 - Logging: serviceB.log
 
 ## Files
@@ -60,11 +59,36 @@ Each service runs independently on its own port as a separate process.
 ## Verify Normal Operation
 Call Service B (which makes a network call to Service A):
 
-curl http://localhost:9000/fetch
+```bash
+curl -i "http://localhost:8081/call-echo?msg=hello"
+```
+
+Example successful response (B forwards A's JSON):
+
+```http
+HTTP/1.1 200 OK
+Date: Thu, 05 Feb 2026 02:03:38 GMT
+Content-type: application/json; charset=utf-8
+Content-length: 55
+
+{"echo":"hi","timestamp":"2026-02-05T02:03:38.683933Z"}
+```
 
 Call Service A directly:
 
-curl http://localhost:8000/data
+```bash
+curl -i http://localhost:8080/health
+```
+
+Example response:
+
+```http
+HTTP/1.1 200 OK
+Date: Wed, 04 Feb 2026 20:46:41 GMT
+Content-length: 17
+
+Service A healthy
+```
 
 <img width="607" height="159" alt="image" src="https://github.com/user-attachments/assets/32538d47-7328-42ef-a9c4-b0d6ef3c886b" />
 
@@ -84,18 +108,35 @@ Expected behavior:
 <img width="466" height="402" alt="image" src="https://github.com/user-attachments/assets/e4b9ce14-041d-4c4e-801e-a02cb4976d87" />
 
 ### 2. Service Outage (Service A Unavailable)
-curl http://localhost:8000/shutdown
-curl http://localhost:9000/fetch
 
-<img width="565" height="135" alt="image" src="https://github.com/user-attachments/assets/266a343f-10d3-49dd-a966-5ab5ff87025d" />
+Shutdown Service A:
 
+```bash
+curl -i http://localhost:8080/shutdown
+```
+
+Then call Service B (which calls A):
+
+```bash
+curl -i "http://localhost:8081/call-echo?msg=after"
+```
+
+Example failure response (A down; B returns 503):
+
+```http
+HTTP/1.1 503 Service Unavailable
+Date: Thu, 05 Feb 2026 02:03:48 GMT
+Content-type: application/json; charset=utf-8
+Content-length: 47
+
+{"message":"Service A unavailable","reason":""}
+```
 
 Expected behavior:
 - Service A stops running
 - Service B catches the connection failure or timeout
-- Service B returns a fallback JSON response instead of crashing
-  
-<img width="568" height="319" alt="image" src="https://github.com/user-attachments/assets/03dff6b9-7265-4087-94ed-2205091d04fe" />
+- Service B returns HTTP 503 with a JSON error and continues running
+
 
 ## Logs
 - serviceA.log records incoming requests and shutdown events
@@ -113,4 +154,4 @@ Expected behavior:
 
 ### What makes this project distributed
 
-This project is distributed because it deliberately splits functionality across two independent services—Service A (data provider) and Service B (consumer/gateway)—that communicate over HTTP. That separation models real-world microservice patterns: each service can be developed, deployed, scaled, and restarted independently, improving fault isolation, testability (Service B implements a fallback when A fails), and realistic networking behavior for labs on resilience, instrumentation, and inter-service communication.
+This project is distributed because it splits functionality across two independent processes—Service A (provider) and Service B (consumer) —that communicate over a network interface (HTTP). They run as separate OS processes on different ports, have independent logs, and can be started, stopped, or scaled independently. The lab exercises demonstrate failure isolation (Service B remains responsive and returns a 503 when Service A is down) and realistic inter-service communication, which are core distributed system concepts.
