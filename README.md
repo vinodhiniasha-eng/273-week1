@@ -98,14 +98,25 @@ Service A healthy
 ## Failure Propagation Demonstration
 
 ### 1. Simulated Failure (HTTP 500 from Service A)
-curl 'http://localhost:8000/data?fail=true'
-curl http://localhost:9000/fetch
+Simulate a 500 response from Service A using the `fail` query parameter:
 
-<img width="610" height="198" alt="image" src="https://github.com/user-attachments/assets/2b364d28-d921-4ef5-a53f-667d6657cd62" />
+```bash
+curl -i 'http://localhost:8080/echo?fail=true'
+curl -i http://localhost:8081/call-echo?msg=test
+```
+
+Example Service A simulated 500 response:
+
+```http
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json; charset=utf-8
+
+{"error":"simulated failure"}
+```
 
 Expected behavior:
-- Service B detects Service A’s failure
-- Service B returns a fallback JSON response
+- Service B detects Service A’s 500 response
+- Service B returns HTTP 503 with a JSON error
 - Service B remains running and responsive
 
 <img width="466" height="402" alt="image" src="https://github.com/user-attachments/assets/e4b9ce14-041d-4c4e-801e-a02cb4976d87" />

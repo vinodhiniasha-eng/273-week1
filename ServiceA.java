@@ -86,12 +86,27 @@ public class ServiceA {
             long start = System.nanoTime();
             String query = exchange.getRequestURI().getQuery();
             String msg = "";
+            boolean fail = false;
             if (query != null) {
                 for (String part : query.split("&")) {
                     if (part.startsWith("msg=")) {
                         msg = part.substring(4);
                     }
+                    if (part.equals("fail=true")) {
+                        fail = true;
+                    }
                 }
+            }
+
+            if (fail) {
+                String resp = "{\"error\":\"simulated failure\"}";
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+                exchange.sendResponseHeaders(500, resp.getBytes(StandardCharsets.UTF_8).length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp.getBytes(StandardCharsets.UTF_8));
+                }
+                logger.warning("/echo -> 500 (simulated)");
+                return;
             }
 
             String body = String.format("{\"echo\":\"%s\",\"timestamp\":\"%s\"}", msg, Instant.now().toString());
