@@ -72,15 +72,28 @@ public class ServiceB {
             long start = System.nanoTime();
             String query = exchange.getRequestURI().getQuery();
             String msg = "";
+            boolean fail = false;
             if (query != null) {
                 for (String part : query.split("&")) {
                     if (part.startsWith("msg=")) {
                         msg = part.substring(4);
+                    } else if (part.equals("fail=true") || (part.startsWith("fail=") && part.substring(5).equals("true"))) {
+                        fail = true;
                     }
                 }
             }
 
+            // URLEncode the msg to be safe when forwarding
+            try {
+                msg = java.net.URLEncoder.encode(msg, java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception ignored) {
+            }
+
             String target = String.format("http://localhost:8080/echo?msg=%s", msg);
+            if (fail) {
+                target += "&fail=true";
+            }
+
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create(target))
                     .timeout(Duration.ofSeconds(2))
